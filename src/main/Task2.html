@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTML-junior</title>
+    <link rel="stylesheet" type="text/css" href="./Style.css">
+</head>
+<body lang=RU link=blue vlink=purple style='tab-interval:36.0pt'>
+<div class=WordSection1>
+    <p class=MsoTitle><a name="_fcain3ahn6mf"></a><span lang=ru>Сравнение открытых
+OLAP-систем Big Data: ClickHouse, Druid и Pinot</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span style='mso-ansi-language:RU'>Оригинал - </span><span
+            lang=ru>https://medium.com/@leventov/comparison-of-the-open-source-olap-systems-for-big-data-clickhouse-druid-and-pinot-8e042a5ed1c7</span>
+    </p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru><a href="https://clickhouse.yandex/"><span
+            style='color:#1155CC'>ClickHouse</span></a>, <a href="http://druid.io/"><span
+            style='color:#1155CC'>Druid</span></a> и <a
+            href="https://github.com/linkedin/pinot"><span style='color:#1155CC'>Pinot</span></a>
+</span><span style='mso-ansi-language:RU'>–</span><span lang=ru> три открытых
+хранилища данных, которые позволяют выполнять аналитические запросы на больших
+объемах данных с интерактивными задержками.</span><span style='mso-ansi-language:
+RU'> Эта статья - перевод </span><span lang=ru><a
+            href="https://medium.com/@leventov/comparison-of-the-open-source-olap-systems-for-big-data-clickhouse-druid-and-pinot-8e042a5ed1c7"><span
+            lang=RU style='mso-ansi-language:RU'>подробного сравнения</span></a></span><span
+            style='mso-ansi-language:RU'>, выполненного Романом Левентовым.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <h2><a name="_azditg471jwp"></a><span lang=ru>Источники информации</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Подробности реализации <b style='mso-bidi-font-weight:
+normal'>ClickHouse</b> стали мне известны от <a href="https://github.com/ztlpn"><span
+            style='color:#1155CC'>Алексея Зателепина</span></a>, одного из <b
+            style='mso-bidi-font-weight:normal'>ключевых разработчиков проекта</b>.
+Доступная на английском документация достаточно скудна </span><span
+            style='mso-ansi-language:RU'>–</span><span lang=ru> наилучшим источником
+информации служат последние четыре секции <a
+                href="https://clickhouse.yandex/docs/en/development/architecture.html"><span
+                style='color:#1155CC'>данной страницы документации</span></a>.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=ru>Я </span></b><b
+            style='mso-bidi-font-weight:normal'><span style='mso-ansi-language:RU'>сам участвую
+в развитии</span><span lang=ru> Druid</span></b><span lang=ru>, но у меня нет </span><span
+            style='mso-ansi-language:RU'>личной </span><span lang=ru>заинтересованности в
+этой системе - по правде говоря, скорее всего в ближайшее</span><span lang=ru
+                                                                      style='mso-ansi-language:RU'> </span><span
+            lang=ru>время </span><span
+            style='mso-ansi-language:RU'>я </span><span lang=ru>перестану </span><span
+            style='mso-ansi-language:RU'>заниматься её</span><span lang=ru> разработк</span><span
+            style='mso-ansi-language:RU'>ой</span><span lang=ru>. Поэтому читатели могут
+рассчитывать на отсутствие какой-либо предвзятости.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Всё, что я буду далее писать про <b
+            style='mso-bidi-font-weight:normal'>Pinot</b>, основывается на странице <a
+            href="https://github.com/linkedin/pinot/wiki/Architecture"><span
+            style='color:#1155CC'>Архитектура в вики Pinot</span></a>, а также на других
+страницах вики в разделе “Проектная документация”. Последний раз они
+обновлялись в июне 2017 года - больше, чем полгода назад.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Рецензентами </span><span style='mso-ansi-language:
+RU'>оригинальной</span><span lang=ru> статьи стали Алексей Зателепин и <a
+            href="https://github.com/ludv1x"><span style='color:#1155CC'>Виталий Людвиченко</span></a>
+(разработчики ClickHouse), <a href="https://github.com/gianm"><span
+                style='color:#1155CC'>Жан Мерлино</span></a> (самый активный разработчик
+Druid), <a href="https://github.com/kishoreg"><span style='color:#1155CC'>Кишор
+Гопалакришна</span></a> (архитектор Pinot) и <a href="https://github.com/jfim"><span
+                style='color:#1155CC'>Жан-Француа Им</span></a> (разработчик Pinot)</span><span
+            style='mso-ansi-language:RU'>. Мы присоединяемся к благодарности автора и
+полагаем, что это многократно повышает авторитетность статьи. </span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=ru>Предупреждение</span></b><span
+            lang=ru>: статья достаточно большая, поэтому вполне возможно вы захотите ограничиться
+прочтением раздела “Заключение” в конце.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <h1><a name="_bt8srswlrdlb"></a><span lang=ru>Сходства между системами</span></h1>
+
+    <h2><a name="_q4chtsn7k4oa"></a><span lang=ru>Связанные данные и вычисления </span></h2>
+
+    <p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=ru>На
+фундаментальном уровне, ClickHouse, Druid и Pinot похожи</span></b><span
+            lang=ru>, поскольку они хранят данные и выполняют обработку запросов на одних и
+тех же узлах, уходя от “разъединенной” архитектуры BigQuery. Недавно я </span><span
+            style='mso-ansi-language:RU'>уже </span><span lang=ru>описывал несколько
+наследственных проблем со связанной архитектурой в случае Druid </span><span
+            style='mso-ansi-language:RU'>[</span><span lang=ru><a
+            href="https://medium.com/@leventov/the-problems-with-druid-at-large-scale-and-high-load-part-1-714d475e84c9"><span
+            style='color:#1155CC'>1</span></a>, <a
+            href="https://medium.com/@leventov/the-challenges-of-running-druid-at-large-scale-and-future-directions-part-2-ef594ce298f2"><span
+            style='color:#1155CC'>2</span></a></span><span style='mso-ansi-language:RU'>]</span><span
+            lang=ru>. Открытого эквивалента для BigQuery на данный момент не существует (за
+исключением, разве что, <a href="http://drill.apache.org/"><span
+                style='color:#1155CC'>Drill</span></a>?) </span><span style='mso-ansi-language:
+RU'>Возможным п</span><span lang=ru>одход</span><span style='mso-ansi-language:
+RU'>ам</span><span lang=ru> к построению подобных открытых систем </span><span
+            style='mso-ansi-language:RU'>посвящена </span><span lang=ru><a
+            href="https://medium.com/@leventov/design-of-a-cost-efficient-time-series-store-for-big-data-88c5dc41af8e"><span
+            style='color:#1155CC'>друг</span><span lang=RU style='color:#1155CC;mso-ansi-language:
+RU'>ая</span><span style='color:#1155CC'> статье в </span><span lang=RU
+                                                                style='color:#1155CC;mso-ansi-language:RU'>моем </span><span
+            style='color:#1155CC'>блоге</span></a>.</span></p>
+
+    <h2><a name="_i2lr9uqzhzem"></a><span lang=ru>Отличия от Big Data SQL-систем:
+индексы и статическое распределение данных</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Рассматриваемые </span><span style='mso-ansi-language:
+RU'>в этой статье </span><span lang=ru>системы <b style='mso-bidi-font-weight:
+normal'>выполняют запросы быстрее</b>, чем системы Big Data из семейства класса
+SQL-on-Hadoop: Hive, Impala, Presto и Spark, даже когда последние получают
+доступ к данным, хранящимся в колоночном формате - к примеру, Parquet или Kudu.
+Это происходит потому, что в ClickHouse, Druid и Pinot:</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l2 level1 lfo1'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Имеется<b style='mso-bidi-font-weight:
+normal'> свой собственный формат для хранения данных с индексами</b>, и </span><span
+            style='mso-ansi-language:RU'>они </span><span lang=ru>тесно интегрированы с
+движками обработки запросов. Системы класса SQL-on-Hadoop </span><span
+            style='mso-ansi-language:RU'>обычно можно назвать агностиками</span><span
+            lang=ru> относительно формат</span><span style='mso-ansi-language:RU'>ов</span><span
+            lang=ru> данных и поэтому </span><span style='mso-ansi-language:RU'>они </span><span
+            lang=ru>менее “навязчивы” в б</span><span style='mso-ansi-language:RU'>э</span><span
+            lang=ru>кендах Big Data.</span></p>
+
+    <p class=MsoNormalCxSpLast style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l2 level1 lfo1'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'><span
+            lang=ru>Данные распределены относительно “статично”</span></b><span lang=ru>
+между </span><span style='mso-ansi-language:RU'>узлами</span><span lang=ru>, и </span><span
+            style='mso-ansi-language:RU'>при </span><span lang=ru>распределенно</span><span
+            style='mso-ansi-language:RU'>м</span><span lang=ru> выполнени</span><span
+            style='mso-ansi-language:RU'>и</span><span lang=ru> запроса </span><span
+            style='mso-ansi-language:RU'>это </span><span lang=ru>мож</span><span
+            style='mso-ansi-language:RU'>но использовать</span><span lang=ru>. Обратная
+сторона медали </span><span style='mso-ansi-language:RU'>при этом </span><span
+            lang=ru>в том, что ClickHouse, Druid и Pinot <b style='mso-bidi-font-weight:
+normal'>не поддерживают запросы</b></span><b style='mso-bidi-font-weight:normal'><span
+            style='mso-ansi-language:RU'>,</span><span lang=ru> которые требуют перемещения
+большого количества данных</span></b><span lang=ru> между </span><span
+            style='mso-ansi-language:RU'>узл</span><span lang=ru>ами - к примеру, join
+между двумя большими таблицами.</span></p>
+
+    <h2><a name="_hkx18h7qic6h"></a><span lang=ru>Отсутствие точечных обновлений и
+удалений</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Находясь на другой стороне спектра баз данных,
+ClickHouse, Druid и Pinot <b style='mso-bidi-font-weight:normal'>не
+поддерживают точечные обновления и удаления</b>, в противоположность колоночным
+системам вроде Kudu, InfluxDB и Vertica (?). Это даёт ClickHouse, Druid и Pinot
+возможность производить более эффективное колоночное сжатие и более агрессивные
+индексы, что означает <b style='mso-bidi-font-weight:normal'>большую
+эффективность использования ресурсов</b> и быстрое выполнение запросов.<br
+                style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormal><span lang=ru>Разработчики ClickHouse в Yandex планируют
+начать поддерживать <a
+                href="https://clickhouse.yandex/docs/en/roadmap.html#q1-2018"><span
+                style='color:#1155CC'>обновления и удаления в будущем</span></a>, но я не
+уверен, будут ли это “настоящие” точечные запросы или обновления/удаления
+диапазонов данных.</span></p>
+
+    <h2><a name="_wfipugz6ejyi"></a><span lang=ru>Поглощение в стиле Big Data</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Все три системы поддерживают потоковое
+поглощение данных из Kafka. Druid и Pinot поддерживают </span><span
+            style='mso-ansi-language:RU'>потоковую передачу данных </span><span lang=ru>стриминг
+в <a href="https://en.wikipedia.org/wiki/Lambda_architecture"><span
+                style='color:#1155CC'>Лямбда-стиле</span></a> и пакетное поглощение одних и тех
+же данных. ClickHouse поддерживает пакетные вставки напрямую, поэтому ему не
+требуется отдельная система пакетного поглощения подобная той, что используется
+в Druid и Pinot. Если вас интересуют подробности, то их вы сможете найти далее.</span></p>
+
+    <h2><a name="_mla368xd2rnw"></a><span lang=ru>Проверен</span><span
+            style='mso-ansi-language:RU'>о</span><span lang=ru> на крупном масштабе</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Все три системы проверены на работоспособность
+в крупных масштабах: в <a
+                href="https://yandex.com/blog/clickhouse/evolution-of-data-structures-in-yandex-metrica"><span
+                style='color:#1155CC'>Yandex.Metrica работает кластер ClickHouse</span></a>,
+состоящий из примерно десятка тысяч ядер CPU. В Metamarkets используется <a
+                href="https://medium.com/@leventov/the-problems-with-druid-at-large-scale-and-high-load-part-1-714d475e84c9"><span
+                style='color:#1155CC'>кластер Druid аналогичного размера</span></a>. Один
+кластер Pinot в LinkedIn включает в себя “<a
+                href="https://github.com/linkedin/pinot/issues/3#issuecomment-228497765"><span
+                style='color:#1155CC'>тысячи машин</span></a>”.</span></p>
+
+    <h2><a name="_umj466vjc3ux"></a><span lang=ru>Незрелость</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Все рассматриваемые в статье системы являются <b
+            style='mso-bidi-font-weight:normal'>незрелыми по меркам открытых
+enterprise-систем Big Data</b>. Однако, скорее всего они незрелы не более, чем
+среднестатистическая открытая система Big Data - но это совсем другая история.
+В ClickHouse, Druid и Pinot недостает некоторых очевидных оптимизаций и
+функционал</span><span style='mso-ansi-language:RU'>ьности</span><span lang=ru>,
+и они кишат багами (насчет ClickHouse и Pinot я не уверен на все 100%, но не
+вижу причин, по которым они в этом плане были бы лучше Druid).</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Это плавно подводит нас к следующему важному
+разделу.</span></p>
+
+    <h1><a name="_6w8px4f1pvc1"></a><span lang=ru>Про сравнени</span><span
+            style='mso-ansi-language:RU'>е</span><span lang=ru> производительности и выбор
+системы</span></h1>
+
+    <p class=MsoNormal><span lang=ru>Я регулярно в</span><span style='mso-ansi-language:
+RU'>ижу</span><span lang=ru> в сети</span><span style='mso-ansi-language:RU'>,
+как некоторые проводят</span><span lang=ru> сравнения систем больших данных</span><span
+            style='mso-ansi-language:RU'>:</span><span lang=ru> они берут </span><span
+            style='mso-ansi-language:RU'>набор</span><span lang=ru> своих данных,
+каким-либо образом “скармливают” его оцениваемой системе, а затем немедленно
+пытаются измерить производительность - сколько памяти или дискового
+пространства было занято, и насколько быстро выполнялись запросы</span><span
+            style='mso-ansi-language:RU'>.</span> <span style='mso-ansi-language:RU'>П</span><span
+            lang=ru>ричем понимани</span><span style='mso-ansi-language:RU'>е</span><span
+            lang=ru> того, как устроены изнутри испытываемые ими системы, у них </span><span
+            style='mso-ansi-language:RU'>отсутствует</span><span lang=ru>. Затем, используя
+лишь подобные специфичные данные о производительности - иногда вместе со
+списками функционал</span><span style='mso-ansi-language:RU'>ьности</span><span
+            lang=ru>, котор</span><span style='mso-ansi-language:RU'>ая</span><span
+            lang=ru> им нужн</span><span style='mso-ansi-language:RU'>а</span><span
+            lang=ru> и котор</span><span style='mso-ansi-language:RU'>ая</span><span
+            lang=ru> есть в системе <i style='mso-bidi-font-style:normal'>на настоящий момент</i></span><span
+            style='mso-ansi-language:RU'>, -</span><span lang=ru> они в итоге делают свой
+выбор или, что еще хуже, выбирают написать свою собственную, “лучшую” систему с
+нуля.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span style='mso-ansi-language:RU'>Такой</span><span
+            lang=ru> подход мне кажется неправильным, по крайней мере он неприменим в
+отношении открытых OLAP-систем для Big Data. Задача создания системы Bid Data
+OLAP, которая смогла бы работать эффективно в большинстве сценариев
+использования и содержала </span><span style='mso-ansi-language:RU'>бы </span><span
+            lang=ru>все необходимые функции настолько велика, что я оцениваю ее реализацию
+как минимум в <b style='mso-bidi-font-weight:normal'>100 человеко-лет</b>.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>На сегодня, ClickHouse, Druid и Pinot
+оптимизированы <i style='mso-bidi-font-style:normal'>только</i> для конкретных
+сценариев использования, которые требуются их разработчиком - и содержат по
+большей части лишь те функции, в которых нуждаются сами разработчики. Я могу
+гарантировать, что ваш случай обязательно “упрется” в те узкие места, с
+которыми разработчики рассматриваемых OLAP-систем еще не сталкивались - или же
+в те места, что их не интересуют. </span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Не говоря уже о том, </span><span
+            style='mso-ansi-language:RU'>что</span><span lang=ru> упомянутый выше подход
+“забросить данные в систему, о которой вы ничего не знаете, и затем измерить её
+эффективность” </span><span style='mso-ansi-language:RU'>весьма</span><span
+            lang=ru> вероятно</span><span style='mso-ansi-language:RU'> даст искаженный
+результат</span><span lang=ru> из-за серьезных “узких” мест, которые </span><span
+            style='mso-ansi-language:RU'>на самом деле </span><span lang=ru>могли бы быть
+исправлены <b style='mso-bidi-font-weight:normal'>простым изменением
+конфигурации</b>, схемы данных или другим построением запроса.</span></p>
+
+    <h2><a name="_mezu153ob1u7"></a><span lang=ru>CloudFlare: ClickHouse </span><span
+            style='mso-ansi-language:RU'>против</span><span lang=ru> Druid</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Одним таким примером, хорошо иллюстрирующим описанную
+выше проблему, является пост Марека Вавру</span><span style='mso-ansi-language:
+RU'>ш</span><span lang=ru>а о <a
+            href="https://blog.cloudflare.com/how-cloudflare-analyzes-1m-dns-queries-per-second/#comment-3302778860"><span
+            style='color:#1155CC'>выборе между ClickHouse и Druid в Cloudflare</span></a>.
+Им потребовалось 4 сервера ClickHouse (которые со временем превратились в 9), и
+по их оценкам, для разворачивания аналогичной установки Druid им бы
+потребовались “сотни </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru>”. Пусть Марек и признает, что <b style='mso-bidi-font-weight:normal'>сравнение
+является нечестным</b>, поскольку Druid недостаёт “сортировки по первичному
+ключу”, он возможно даже не осознает, что достичь примерно того же самого
+эффекта в Druid возможно просто <a
+                href="http://druid.io/docs/0.11.0/ingestion/index.html"><span style='color:
+#1155CC'>установив правильный порядок измерений в “</span></a><a
+                href="http://druid.io/docs/0.11.0/ingestion/index.html"><i style='mso-bidi-font-style:
+normal'><span style='color:#1155CC'>ingestion spec</span></i></a><a
+                href="http://druid.io/docs/0.11.0/ingestion/index.html"><span style='color:
+#1155CC'>”</span></a> и произведя простую подготовку данных: обрезать значение
+колонки </span><span lang=ru style='font-family:"Courier New";letter-spacing:
+-.05pt'>__time</span><span lang=ru> в Druid до некоей грубой детализации (к
+примеру, один час) и опционально добавить другу</span><span style='mso-ansi-language:
+RU'>ю</span><span lang=ru> “длинно-типовую” колонку “precise_time”</span><span
+            style='mso-ansi-language:RU'>,</span><span lang=ru> если для некоторых запросов
+требуются более точные временные рамки. Да, это хак, но, как мы только что
+выяснили, и в Druid можно сортировать данные по какому-либо измерению перед </span><span
+            lang=ru style='font-family:"Courier New";letter-spacing:-.05pt'>__time</span><span
+            lang=ru>, и это достаточно просто реализовать.</span></p>
+
+    <p class=MsoNormal><span style='mso-ansi-language:RU'>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Впрочем, я не стану спорить с их итоговым
+решением выбрать ClickHouse, поскольку на масштабе примерно в 10 </span><span
+            style='mso-ansi-language:RU'>узлов и</span><span lang=ru> для их нужд
+ClickHouse </span><span style='mso-ansi-language:RU'>мне тоже кажется</span><span
+            lang=ru> лучшим выбором, чем Druid. Но сделанное ими заключение о том, что
+ClickHouse как минимум на порядок эффективнее (по меркам стоимости
+инфраструктуры), чем Druid - это серьезное заблуждение. На самом деле, из
+рассматриваемых нами сегодня систем, <b style='mso-bidi-font-weight:normal'>Druid
+предлагает наилучшую возможность для реально дешевых установок</b> (смотрите
+раздел “Уровни </span><span style='mso-ansi-language:RU'>узлов </span><span
+            lang=ru>обработки запросов в Druid ” ниже).</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal style='margin-left:1.0cm'><a name="_q3omch9hjr90"></a><span
+            lang=ru style='background:yellow;mso-highlight:yellow'>Когда вы выбираете
+систему OLAP Big Data, не сравнивайте то, насколько они сейчас хорошо подходят
+для вашего случая. Сейчас они все субоптимальны. Вместо этого, сравните,
+насколько быстро ваша компания способна заставить двигаться эти системы в том направлении,
+которое нужно именно вам.</span></p>
+
+    <p class=MsoNormal style='margin-left:1.0cm'><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>В силу своей фундаментальной архитектурной
+схожести, ClickHouse, Druid и Pinot имеют примерно один и тот же “</span><span
+            style='mso-ansi-language:RU'>предел</span><span lang=ru>” эффективности и
+оптимизации производительности. Здесь нет “волшебной таблетки”, которая
+позволила бы какой-либо из этих систем быть быстрее, чем остальные. Не
+позволяйте запутать себя тем фактом, что <i style='mso-bidi-font-style:normal'>в
+своем текущем состоянии</i> системы показывают себя очень по-разному в
+различных бенчмарках. </span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Допустим, Druid не поддерживает “сортировку по
+первичному ключу” настолько хорошо, насколько это умеет ClickHouse - а
+ClickHouse в свою очередь не поддерживает “инвертированные индексы” столь же
+хорошо, как Druid, что дает данным системам преимущества с той или иной
+нагрузкой. <b style='mso-bidi-font-weight:normal'>Упущенные оптимизации могут
+быть реализованы в выбранной системе при помощи не так</b></span><b
+            style='mso-bidi-font-weight:normal'><span style='mso-ansi-language:RU'>их</span><span
+            lang=ru> уж и больш</span></b><b style='mso-bidi-font-weight:normal'><span
+            style='mso-ansi-language:RU'>их</span><span lang=ru> усилий</span></b><span
+            lang=ru>, если у вас есть намерение и возможность решиться на подобный шаг.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l6 level1 lfo2'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span style='mso-ansi-language:RU'>В в</span><span
+            lang=ru>аш</span><span style='mso-ansi-language:RU'>ей</span><span lang=ru>
+организаци</span><span style='mso-ansi-language:RU'>и</span><span lang=ru>
+должн</span><span style='mso-ansi-language:RU'>ы быть</span><span lang=ru>
+инженер</span><span style='mso-ansi-language:RU'>ы</span><span lang=ru>,
+способны</span><span style='mso-ansi-language:RU'>е</span><span lang=ru>
+прочитать, понять и модифицировать исходный код выбранной системы, </span><span
+            style='mso-ansi-language:RU'>к тому же у них</span> <span lang=ru>должно</span><span
+            style='mso-ansi-language:RU'> быть на это время</span><span lang=ru>. Заметьте,
+что ClickHouse написан на C++, а Druid и Pinot&#8202;—&#8202; на Java.<br
+                style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l6 level1 lfo2'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Или</span><span style='mso-ansi-language:
+RU'> же</span><span lang=ru> ваша организация должна подписать контракт с
+компанией, которая оказывает поддержку выбранной системы. Это</span><span
+            lang=ru style='mso-ansi-language:EN-US'> </span><span lang=ru>будут</span><span
+            lang=ru style='mso-ansi-language:EN-US'> </span><span lang=ru><a
+            href="https://www.altinity.com/"><span lang=EN-US style='color:#1155CC;
+mso-ansi-language:EN-US'>Altinity</span></a></span><span lang=EN-US
+                                                         style='mso-ansi-language:EN-US'> </span><span
+            lang=ru>для</span><span
+            lang=EN-US style='mso-ansi-language:EN-US'> ClickHouse, </span><span lang=ru><a
+            href="https://imply.io/services"><span lang=EN-US style='color:#1155CC;
+mso-ansi-language:EN-US'>Imply</span></a></span><span lang=EN-US
+                                                      style='mso-ansi-language:EN-US'> </span><span
+            lang=ru>и</span><span lang=ru
+                                  style='mso-ansi-language:EN-US'> </span><span lang=ru><a
+            href="https://hortonworks.com/open-source/druid/"><span lang=EN-US
+                                                                    style='color:#1155CC;mso-ansi-language:EN-US'>Hortonworks</span></a></span><span
+            lang=EN-US style='mso-ansi-language:EN-US'> </span><span lang=ru>для</span><span
+            lang=EN-US style='mso-ansi-language:EN-US'> Druid. </span><span lang=ru>Для
+Pinot таких компаний в данный момент нет.<br style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormal><span lang=ru>Другие сведения о разработке систем, которые
+вам стоит принять во внимание:<br style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l6 level1 lfo2'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Авторы ClickHouse, работающие в
+Yandex, утверждают, что они тратят 50% своего времени на создание функционал</span><span
+            style='mso-ansi-language:RU'>ьности</span><span lang=ru>, котор</span><span
+            style='mso-ansi-language:RU'>ая</span><span lang=ru> требуется им внутри
+компании, и другие 50% уходят на функции, который набирают большинство “голосов
+</span><span style='mso-ansi-language:RU'>сообщества</span><span lang=ru>”.
+Однако, чтобы вы получили от этого факта преимущество, требуется, чтобы <b
+                style='mso-bidi-font-weight:normal'>функции, которые нужны вам, </b></span><b
+            style='mso-bidi-font-weight:normal'><span style='mso-ansi-language:RU'>были и </span><span
+            lang=ru>наиболее востребованы сообществом</span></b><span lang=ru> ClickHouse.</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l6 level1 lfo2'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Разработчики Druid из Imply
+мотивированы работать над широко используемыми функциями, поскольку это
+позволит им максимально увеличить объем охвата своего бизнеса в будущем.</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l6 level1 lfo2'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Процесс разработки Druid сильно
+напоминает <a
+                href="https://community.apache.org/apache-way/apache-project-maturity-model.html"><span
+                style='color:#1155CC'>модель Apache</span></a>, когда ПО несколько лет
+разрабатывается несколькими компаниями, у каждой из который достаточно
+своеобразные </span><span style='mso-ansi-language:RU'>и </span><span lang=ru>различные
+приоритеты, и среди них нет ведущей компании. ClickHouse и Pinot </span><span
+            style='mso-ansi-language:RU'>пока</span><span lang=ru> еще далеки от подобного
+этапа, поскольку ими занимаются соответственно лишь Yandex и Linkedin.
+Сторонний вклад в развитие Druid имеет </span><span style='mso-ansi-language:
+RU'>минимальный</span><span lang=ru> шанс быть отклоненным в силу того, что он
+расходится с видением основного разработчика - ведь <b style='mso-bidi-font-weight:
+normal'>в Druid нет “основной” компании-разработчика</b>.</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l6 level1 lfo2'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Druid поддерживает “API
+разработчика”, который позволяет </span><span style='mso-ansi-language:RU'>привносить</span><span
+            lang=ru> собственные типы колонок, механизмы агрегации, возможные варианты для
+«глубокого хранения» и пр., причем все это вы можете держать в кодовой базе,
+отдельной от самого ядра Druid. Данное API документировано разработчиками
+Druid, и они следят за его совместимостью с предыдущими версиями. Однако, </span><span
+            style='mso-ansi-language:RU'>оно </span><span lang=ru>недостаточно “взрослое”,
+и ломается практически </span><span style='mso-ansi-language:RU'>с </span><span
+            lang=ru>каждым новым релизом Druid. Насколько мне известно, в ClickHouse и
+Pinot схожие API не поддерживаются.</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l6 level1 lfo2'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Согласно Github, <b
+            style='mso-bidi-font-weight:normal'>над Pinot работает наибольшее число людей</b>
+- по всей видимости, лишь за прошлый год в Pinot было вложено <a
+                href="https://github.com/linkedin/pinot/graphs/contributors?from=2017-01-24&amp;to=2018-01-24&amp;type=c"><span
+                style='color:#1155CC'>не менее 10 человеко-лет</span></a>. Для ClickHouse эта
+цифра составляет примерно 6 человеко-лет, а для Druid - 7. В теории, это должно
+означать, что Pinot улучшается быстрее всех остальных систем, которые мы
+рассматриваем.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Архитектуры Druid и Pinot почти что идентичны
+друг другу, в то время как ClickHouse стоит слегка в стороне. Поэтому сначала
+мы сравним ClickHouse c “обобщенной” архитектурой Druid/Pinot, а затем обсудим
+мелкие различия между Druid и Pinot.</span></p>
+
+    <h1><a name="_mrm9teqjph1r"></a><span lang=ru>Различия между ClickHouse и
+Druid/Pinot</span></h1>
+
+    <h2><a name="_f4ql6fp23lau"></a><span lang=ru>Управление данными: Druid и Pinot</span></h2>
+
+    <p class=MsoNormal><span lang=ru>В Druid и Pinot, все данные в каждой “таблице”
+(как бы она не называлась в терминологии этих систем) разбиваются на указанное
+количество частей. По времен</span><span style='mso-ansi-language:RU'>ой оси</span><span
+            lang=ru>, данные </span><span style='mso-ansi-language:RU'>обычно </span><span
+            lang=ru>разделены </span><span style='mso-ansi-language:RU'>с</span> <span
+            lang=ru>задан</span><span style='mso-ansi-language:RU'>ым</span><span lang=ru>
+интервал</span><span style='mso-ansi-language:RU'>ом</span><span lang=ru>.
+Затем эти части данных «запечатываются» индивидуально в самостоятельные
+автономные сущности, называемые «сегментами». Каждый сегмент включает в себя
+метаданные таблицы, сжатые столбчатые данные и индексы.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Сегменты хранятся в файловой системе хранилища
+«глубокого хранения» (например, HDFS) и могут быть загружены на </span><span
+            style='mso-ansi-language:RU'>узлы</span><span lang=ru> обработки запросов, но
+последние не отвечают за устойчивость сегментов, поэтому </span><span
+            style='mso-ansi-language:RU'>узлы</span><span lang=ru> обработки запросов могут
+быть заменены относительно свободно. <b style='mso-bidi-font-weight:normal'>Сегменты
+не привязаны жестко к конкретным </b></span><b style='mso-bidi-font-weight:
+normal'><span style='mso-ansi-language:RU'>узлам</span></b><span
+            style='mso-ansi-language:RU'> и</span><span lang=ru> могут быть загружены на те
+или другие </span><span style='mso-ansi-language:RU'>узлы</span><span lang=ru>.
+Специальный выделенный сервер (который называется “координатором” в Druid и
+“контроллером” в Pinot, но я ниже обращаюсь к нему как к “мастеру”) отвечает за
+присвоение сегментов </span><span style='mso-ansi-language:RU'>узлам</span><span
+            lang=ru>, и перемещению сегментов между </span><span style='mso-ansi-language:
+RU'>узлами,</span><span lang=ru> если потребуется.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Это не противоречит тому, что</span><span
+            style='mso-ansi-language:RU'> я отмечал выше,</span><span lang=ru> все три
+системы имеют статическое распределение данных между </span><span
+            style='mso-ansi-language:RU'>узл</span><span lang=ru>ами, поскольку загрузки
+сегментов и их перемещения в Druid - и насколько я понимаю в Pinot - являются
+дорогими операциями и потому не выполняются для каждой отдельной очереди, </span><span
+            style='mso-ansi-language:RU'>а </span><span lang=ru>происходя</span><span
+            style='mso-ansi-language:RU'>т</span><span lang=ru> обычно раз в несколько
+минут/часов/дней.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Метаданные сегментов хранятся в ZooKeeper -
+напрямую в случае Druid, и при помощи фреймворка <a
+                href="http://helix.apache.org/"><span style='color:#1155CC'>Helix</span></a> в
+Pinot. В Druid метаданные также хранятся в базе SQL, </span><span
+            style='mso-ansi-language:RU'>об этом будет подробнее</span><span lang=ru> в
+разделе “Различия между Druid и Pinot”</span><span style='mso-ansi-language:
+RU'>.</span></p>
+
+    <h2><a name="_f9i7ppa6b8nt"></a><span lang=ru>Управление данными: ClickHouse</span></h2>
+
+    <p class=MsoNormal><span lang=ru>В ClickHouse нет “сегментов”, содержащих
+данные, попадающие в конкретные временные диапазоны. В нем нет “глубокого
+хранения” для данных, </span><span style='mso-ansi-language:RU'>узлы</span><span
+            lang=ru> в кластере ClickHouse также отвечают и за обработку запросов, и за
+постоянство/устойчивость данных, хранящихся на них. Так что вам <b
+                style='mso-bidi-font-weight:normal'>не потребуется HDFS</b> или облачное
+хранилище данных вроде Amazon S3.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>В ClickHouse имеются секционированные таблицы,
+состоящие из указанного набора </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru>. Здесь нет “центральной власти” или сервера метаданных. Все </span><span
+            style='mso-ansi-language:RU'>узлы</span><span lang=ru>, между которыми </span><span
+            style='mso-ansi-language:RU'>разделена</span><span lang=ru> та или иная
+таблица, содержат полные, идентичные копии метаданных, включая адреса всех
+остальных </span><span style='mso-ansi-language:RU'>узлов</span><span lang=ru>,
+на которых хранятся секции этой таблицы.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Метаданные секционированной таблицы включают
+“весы” </span><span style='mso-ansi-language:RU'>узлов</span><span lang=ru> для
+распределения свежезапис</span><span style='mso-ansi-language:RU'>ываемых </span><span
+            lang=ru>данны</span><span style='mso-ansi-language:RU'>х</span><span lang=ru> -
+к примеру, 40% данных должны идти на </span><span style='mso-ansi-language:
+RU'>узел</span><span lang=ru> A, 30% на </span><span style='mso-ansi-language:
+RU'>узел</span><span lang=ru> B и 30% на C. Обычно </span><span
+            style='mso-ansi-language:RU'>же </span><span lang=ru>распределение должно
+происходить равномерно</span><span style='mso-ansi-language:RU'>, </span><span
+            lang=ru>“</span><span style='mso-ansi-language:RU'>переко</span><span lang=ru>ос”,
+</span><span style='mso-ansi-language:RU'>как в этом</span><span lang=ru>
+пример</span><span style='mso-ansi-language:RU'>е</span><span lang=ru>,
+требуется только тогда, когда к секционированной таблице добавляется нов</span><span
+            style='mso-ansi-language:RU'>ый</span> <span style='mso-ansi-language:RU'>узел
+и нужно </span><span lang=ru>побыстрее заполнить </span><span style='mso-ansi-language:
+RU'>его</span><span lang=ru> какими-либо данными. <b style='mso-bidi-font-weight:
+normal'>Обновления этих “весов” должны выполняться вручную</b> администраторами
+кластера ClickHouse, или же автоматизированной системой, построенной поверх
+ClickHouse.</span></p>
+
+    <h2><a name="_3cz76vyudd8g"></a><span lang=ru>Управление данными: сравнение</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Подход к управлению данными в ClickHouse
+проще, чем в Druid и Pinot: не требуется “глубокого хранилища”, всего один тип </span><span
+            style='mso-ansi-language:RU'>узлов</span><span lang=ru>, не требуется
+выделенного сервера для управления данными. Но подход ClickHouse</span><span
+            style='mso-ansi-language:RU'> приводит к некоторым трудностям</span><span
+            lang=ru>, когда любая таблица данных вырастает настолько большой, что требуется
+ее </span><span style='mso-ansi-language:RU'>разбиение</span><span lang=ru>
+между десятком или более </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru>: </span><span style='mso-ansi-language:RU'>коэффициент</span><span
+            lang=ru> усиления запроса становится настолько же велик, насколько и фактор
+секционирования - даже для запросов, которые покрывают небольшой интервал
+данных:</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span style='mso-ansi-language:RU;mso-no-proof:yes'><!--[if gte vml 1]>
+        <v:shapetype
+                id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
+                path="m@4@5l@4@11@9@11@9@5xe" filled="f" stroked="f">
+            <v:stroke joinstyle="miter"/>
+            <v:formulas>
+                <v:f eqn="if lineDrawn pixelLineWidth 0"/>
+                <v:f eqn="sum @0 1 0"/>
+                <v:f eqn="sum 0 0 @1"/>
+                <v:f eqn="prod @2 1 2"/>
+                <v:f eqn="prod @3 21600 pixelWidth"/>
+                <v:f eqn="prod @3 21600 pixelHeight"/>
+                <v:f eqn="sum @0 0 1"/>
+                <v:f eqn="prod @6 1 2"/>
+                <v:f eqn="prod @7 21600 pixelWidth"/>
+                <v:f eqn="sum @8 21600 0"/>
+                <v:f eqn="prod @7 21600 pixelHeight"/>
+                <v:f eqn="sum @10 21600 0"/>
+            </v:formulas>
+            <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
+            <o:lock v:ext="edit" aspectratio="t"/>
+        </v:shapetype>
+        <v:shape id="image4.png" o:spid="_x0000_i1026" type="#_x0000_t75"
+                 style='width:451.5pt;height:281.25pt;visibility:visible;mso-wrap-style:square'>
+            <v:imagedata src="HTML-junior1.files/image001.png" o:title=""/>
+        </v:shape><![endif]--><![if !vml]><img border=0 width=602 height=375
+                                               src="HTML-junior1.files/image002.gif"
+                                               v:shapes="image4.png"><![endif]></span></p>
+
+    <p class=MsoNormal align=center style='text-align:center'><i style='mso-bidi-font-style:
+normal'><span lang=ru>Компромисс распределения данных в ClickHouse</span></i></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>В примере, показанном на изображении выше,
+данные таблицы распределены между тремя </span><span style='mso-ansi-language:
+RU'>узлами</span><span lang=ru> в Druid/Pinot, но запрос по малому интервалу
+данных обычно затрагивает лишь дв</span><span style='mso-ansi-language:RU'>а из
+них</span><span lang=ru> (до той поры, пока интервал не пересечет пограничный
+интервал сегмента). В ClickHouse, любые запросы будут вынуждены затронуть три </span><span
+            style='mso-ansi-language:RU'>узлв</span><span lang=ru> – если таблица
+сегментирована между тремя </span><span style='mso-ansi-language:RU'>узлами</span><span
+            lang=ru>. В данном примере разница не выглядит настолько </span><span
+            style='mso-ansi-language:RU'>существенно</span><span lang=ru>, однако
+представьте себе, что случится, если число </span><span style='mso-ansi-language:
+RU'>узлов</span><span lang=ru> достигнет 100 – в то время как фактор
+сегментирования по-прежнему может быть равен, например, 10 в Druid/Pinot.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Чтобы </span><span style='mso-ansi-language:
+RU'>смяг</span><span lang=ru>чить эту проблему, самый большой кластер
+ClickHouse в Яндексе, состоящий из сотен </span><span style='mso-ansi-language:
+RU'>узлов</span><span lang=ru>, в действительности разбит на многие
+«под-кластеры» с несколькими десятками </span><span style='mso-ansi-language:
+RU'>узлов</span><span lang=ru> в каждом. Кластер ClickHouse используется в
+работе </span><span style='mso-ansi-language:RU'>с </span><span lang=ru>аналитикой
+по веб-сайтам, и каждая точка данных имеет измерение «ID вебсайта». Существует
+жесткая привязка каждого ID сайта к конкретному под-кластеру, куда идут все
+данные для этого идентификатора сайта. Поверх кластера ClickHouse есть слой
+бизнес-логики, который управляет </span><span style='mso-ansi-language:RU'>этим</span><span
+            lang=ru> разделением данных при поглощении данных и выполнении запросов. К
+счастью, в их сценариях использования совсем немного запросов затрагивают
+несколько идентификаторов сайтов, и подобные запросы идут не от пользователей
+сервиса, поэтому у них нет жесткой привязки к реальному времени согласно
+соглашению об уровне услуг.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Другим недостатком подхода ClickHouse является
+то, что</span><span style='mso-ansi-language:RU'>,</span><span lang=ru> когда
+кластер растет очень быстро, данные не могут перебалансир</span><span
+            style='mso-ansi-language:RU'>оваться</span><span lang=ru> автоматически без
+участия человека, который вручную </span><span style='mso-ansi-language:RU'>по</span><span
+            lang=ru>меня</span><span style='mso-ansi-language:RU'>е</span><span lang=ru>т
+«веса» </span><span style='mso-ansi-language:RU'>узлов</span><span lang=ru> в
+разбиваемой таблице.<br style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <h2><a name="_fy98yylpnl4t"></a><span lang=ru>Уровни </span><span
+            style='mso-ansi-language:RU'>узлов </span><span lang=ru>обработки запросов в
+Druid</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Управление данными при помощи сегментов «проще
+себе представить» - эта концепция хорошо ложится на наши когнитивные
+способности. Сами сегменты можно перемещать между </span><span
+            style='mso-ansi-language:RU'>узл</span><span lang=ru>ами относительно просто.
+Эта две причины позволили Druid реализовать “</span><i style='mso-bidi-font-style:
+normal'><span style='mso-ansi-language:RU'>разделение на уровни</span></i><span
+            lang=ru>” </span><span style='mso-ansi-language:RU'>узлов</span><span lang=ru>,
+занимающихся обработкой запросов: старые данные автоматически перемещаются на
+сервера с относительно большими дисками, но меньшим количеством памяти и CPU,
+что позволяет <b style='mso-bidi-font-weight:normal'>значительно снизить
+стоимость большого рабочего кластера Druid</b> за счет замедления запросов к
+более старым данным.<br>
+<br>
+Эта функция позволяет Metamarkets экономить сотни тысяч долларов расходов на
+инфраструктуру Druid каждый месяц - в противовес тому варианту, если бы
+использовался “плоский” кластер.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal align=center style='text-align:center'><span
+            style='mso-ansi-language:RU;mso-no-proof:yes'><!--[if gte vml 1]>
+        <v:shape id="image3.png"
+                 o:spid="_x0000_i1025" type="#_x0000_t75" style='width:258pt;height:252pt;
+ visibility:visible;mso-wrap-style:square'>
+            <v:imagedata src="HTML-junior1.files/image003.png" o:title=""/>
+        </v:shape><![endif]--><![if !vml]><img border=0 width=344 height=336
+                                               src="HTML-junior1.files/image004.gif"
+                                               v:shapes="image3.png"><![endif]></span></p>
+
+    <p class=MsoNormal align=center style='text-align:center'><i style='mso-bidi-font-style:
+normal'><span lang=ru>Уровни </span></i><i style='mso-bidi-font-style:normal'><span
+            style='mso-ansi-language:RU'>узлов</span><span lang=ru> обработки запросов в
+Druid</span></i></p>
+
+    <p class=MsoNormal align=center style='text-align:center'><i style='mso-bidi-font-style:
+normal'><span lang=ru>&nbsp;</span></i></p>
+
+    <p class=MsoNormal><span lang=ru>Насколько мне известно, в ClickHouse и Pinot
+пока еще нет похоже</span><span style='mso-ansi-language:RU'>й</span><span
+            lang=ru> функционал</span><span style='mso-ansi-language:RU'>ьности</span><span
+            lang=ru> - предполагается, что все </span><span style='mso-ansi-language:RU'>узлы</span><span
+            lang=ru> в их кластерах од</span><span style='mso-ansi-language:RU'>инаковы</span><span
+            lang=ru>.<br>
+<br>
+В силу того, что архитектура Pinot весьма схожа с архитектурой Druid, как мне
+кажется, будет не слишком сложно добавить аналогичную функцию в Pinot. Тяжелее
+будет в случае с ClickHouse, поскольку для реализации данной функции крайне
+полезно использование концепта “сегментов”, однако это всё равно возможно.</span></p>
+
+    <h2><a name="_wst3882eek8"></a><span lang=ru>Репликация данных: Druid и Pinot</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Единицей репликации в Druid и Pinot является
+единичный сегмент. Сегменты реплицируются на уровне «глубокого хранения»
+(например, в три реплики на HDFS, или при помощи хранилища BLOB-объектов в
+Amazon S3), и на уровне обработки запросов: обычно </span><span
+            style='mso-ansi-language:RU'>и в</span><span lang=ru> Druid и</span><span
+            style='mso-ansi-language:RU'> в</span><span lang=ru> Pinot, каждый сегмент
+загружается на дв</span><span style='mso-ansi-language:RU'>а</span><span
+            lang=ru> различны</span><span style='mso-ansi-language:RU'>х</span> <span
+            style='mso-ansi-language:RU'>узла</span><span lang=ru>. «Мастер»-сервер
+мониторит уровни репликации для каждого сегмента и загружает сегмент на
+какой-либо сервер, если фактор репликации падает ниже заданного уровня
+(например, если как</span><span style='mso-ansi-language:RU'>ой</span><span
+            lang=ru>-либо из </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru> перестаёт отвечать).</span></p>
+
+    <h2><a name="_aawfcqbuvuc8"></a><span lang=ru>Репликация данных: ClickHouse</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Единицей репликации в ClickHouse является
+секция таблицы на сервере (например, все данные из какой-либо таблицы,
+хранящиеся на сервере). Аналогично секционированию, репликация в ClickHouse
+является скорее «статической и конкретной»</span><span style='mso-ansi-language:
+RU'>,</span><span lang=ru> чем «в облачном стиле»: несколько серверов знают,
+что они являются репликами друг друга (для </span><span style='mso-ansi-language:
+RU'>некоторой</span><span lang=ru> конкретной таблицы; в случае другой таблицы,
+конфигурация репликации может отличаться). Репликация предоставляет и
+устойчивость, и доступность запросов. Когда повреждается диск на одно</span><span
+            style='mso-ansi-language:RU'>м</span> <span style='mso-ansi-language:RU'>узле</span><span
+            lang=ru>, данные не теряются, поскольку они хранятся еще и на друго</span><span
+            style='mso-ansi-language:RU'>м</span> <span style='mso-ansi-language:RU'>узле</span><span
+            lang=ru>. Когда как</span><span style='mso-ansi-language:RU'>ой</span><span
+            lang=ru>-либо </span><span style='mso-ansi-language:RU'>узел</span><span
+            lang=ru> временно недоступ</span><span style='mso-ansi-language:RU'>е</span><span
+            lang=ru>н, запросы могут быть перенаправлены на реплику.<br style='mso-special-character:
+line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormal><span lang=ru>В самом большом кластере ClickHouse в Яндексе
+есть два одинаковых набора </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru> в различных дата-центрах, и они спарены. В каждой паре </span><span
+            style='mso-ansi-language:RU'>узлы</span><span lang=ru> являются репликами друг
+друга (используется фактор репликации, равный двум), и они расположены в
+различных дата-центрах.<br style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormal><span lang=ru>ClickHouse полагается на ZooKeeper для
+управления репликацией – поэтому, если вам не нужна репликация, то вам не нужен
+и ZooKeeper. Это означает, что ZooKeeper не потребуется и для ClickHouse,
+развернутого на од</span><span style='mso-ansi-language:RU'>иночном узле</span><span
+            lang=ru>.</span></p>
+
+    <h2><a name="_uk56ah4onigo"></a><span lang=ru>Поглощение данных: Druid и Pinot</span></h2>
+
+    <p class=MsoNormal><span lang=ru>В Druid и Pinot </span><span style='mso-ansi-language:
+RU'>узлы</span><span lang=ru> обработки запросов специализируются на загрузке
+сегментов и обслуживают запросы к данным в сегментах; они не занимаются
+накоплением новых данных и производством новых сегментов.<br style='mso-special-character:
+line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormal><span lang=ru>Когда таблица может обновляться с задержкой в
+час или более, сегменты создаются при помощи движков пакетной обработки – к
+примеру, Hadoop или Spark. И в Druid, и в Pinot есть первоклассная поддержка
+Hadoop из коробки. Существует <a
+                href="https://github.com/metamx/druid-spark-batch"><span style='color:#1155CC'>сторонний
+плагин для поддержки индексации Druid в Spark</span></a>, но в данный момент
+официально он не поддерживается. Насколько мне известно, в Pinot такого уровня
+поддержки Spark пока нет, то есть вы должны быть готовы разобраться с интерфейсами
+Pinot и кодом, а затем самостоятельно написать код на Java/Scala, пусть это и
+не должно быть слишком сложно. (Впрочем, с момента публикации оригинальной
+статьи поддержк</span><span style='mso-ansi-language:RU'>а </span><span
+            lang=ru>Spark</span><span style='mso-ansi-language:RU'> в </span><span
+            lang=EN-US style='mso-ansi-language:EN-US'>Pinot</span><span lang=EN-US
+                                                                         style='mso-ansi-language:RU'> </span><span
+            lang=ru><a
+            href="https://github.com/linkedin/pinot/pull/2388"><span style='color:#1155CC'>был</span><span
+            lang=RU style='color:#1155CC;mso-ansi-language:RU'>а</span><span
+            style='color:#1155CC'> внесен</span><span lang=RU style='color:#1155CC;
+mso-ansi-language:RU'>а</span><span style='color:#1155CC'> контрибьютором</span></a>).<br>
+<br>
+Когда таблица должна обновляться в реальном времени, здесь приходит на помощь
+идея “реалтаймовых</span><span style='mso-ansi-language:RU'>»</span> <span
+            style='mso-ansi-language:RU'>узлов</span><span lang=ru>, котор</span><span
+            style='mso-ansi-language:RU'>ые</span><span lang=ru> дела</span><span
+            style='mso-ansi-language:RU'>ю</span><span lang=ru>т три вещи: принимает новые
+данные из Kafka (Druid поддерживает и другие источники), обслуживает запросы с
+недавними данными, создает сегменты в фоне и затем </span><span
+            style='mso-ansi-language:RU'>записывает</span><span lang=ru> их в “глубокое
+хранилище”.</span></p>
+
+    <h2><a name="_3a93c956uee2"></a><span lang=ru>Поглощение данных: ClickHouse</span></h2>
+
+    <p class=MsoNormal><span style='mso-ansi-language:RU'>Тот ф</span><span
+            lang=ru>акт, что ClickHouse не требуется готовить “сегменты”, содержащие все данные
+и попадающие в заданные временные интервалы, позволяет строить более простую
+архитектуру поглощения данных. ClickHouse не требуется ни пакетный движок
+обработки вроде Hadoop, ни “реалтаймовые” </span><span style='mso-ansi-language:
+RU'>узлы</span><span lang=ru>. Обычные </span><span style='mso-ansi-language:
+RU'>узлы</span><span lang=ru> ClickHouse - те же самые, что занимаются
+хранением данных и обслуживают запросы к ним - напрямую принимают пакетные
+записи данных.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Если таблица </span><span style='mso-ansi-language:
+RU'>разбита на сегменты</span><span lang=ru>, то </span><span style='mso-ansi-language:
+RU'>узел</span><span lang=ru>, котор</span><span style='mso-ansi-language:RU'>ый</span><span
+            lang=ru> принимает пакетную запись (например, 10к строк) распределяет данные
+согласно “весам” (смотрите раздел ниже).</span><span lang=ru style='mso-ansi-language:
+RU'> </span><span lang=ru>Строки записываются одним пакетом, который формирует
+небольшое “множество”. Множество немедленно конвертируется в колоночный формат.
+На каждо</span><span style='mso-ansi-language:RU'>м узле</span><span lang=ru>
+ClickHouse работает фоновый процесс, который объединяет наборы строк в еще
+большие наборы. Документация ClickHouse сильно завязана на принцип, известный
+как “MergeTree”, и подчеркивает схожесть его работы с <a
+            href="https://ru.wikipedia.org/wiki/LSM-%D0%B4%D0%B5%D1%80%D0%B5%D0%B2%D0%BE"><span
+            style='color:#1155CC'>LSM-деревом</span></a>, хотя </span><span
+            style='mso-ansi-language:RU'>меня </span><span lang=ru>это слегка смуща</span><span
+            style='mso-ansi-language:RU'>ет</span><span lang=ru>, поскольку данные не организованы
+в деревья - они лежат в плоском колончатом формате.</span></p>
+
+    <h2><a name="_nyu92lpptxwf"></a><span lang=ru>Поглощение данных: сравнение</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Поглощение данных в Druid и Pinot является
+“тяжелым”: оно состоит из нескольких различных сервисов, и управление ими - это
+тяжелый труд.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Поглощение данных в ClickHouse гораздо проще
+(что компенсируется сложностью управления “историческими” данными - т.е.
+данными не в реальном времени), но и здесь есть один момент: вы должны иметь
+возможность собирать данные в пакеты до самого ClickHouse. Автоматическое
+поглощение и пакетный сбор данных из <a
+                href="https://clickhouse.yandex/docs/en/table_engines/kafka.html"><span
+                style='color:#1155CC'>Kafka доступно “из коробки”</span></a>, но если у вас
+используется другой источник данных в реальном времени (здесь подразумевается
+всё, что угодно, в диапазоне между инфраструктурой запросов, альтернативной
+Kafka, и стриминговых движков обработки, вплоть до различных HTTP-endpoint), то
+вам придется создать промежуточный сервис по сбору пакетов, или же </span><span
+            style='mso-ansi-language:RU'>внести</span><span lang=ru> код напрямую в
+ClickHouse.</span></p>
+
+    <h2><a name="_icy9euz90n90"></a><span lang=ru>Выполнение запроса</span></h2>
+
+    <p class=MsoNormal><span lang=ru>В <b style='mso-bidi-font-weight:normal'>Druid
+и Pinot</b> имеется отдельный слой </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru>, называемых “<i style='mso-bidi-font-style:normal'>брокерами</i>”,
+которые принимают все запросы к системе. Они определяют, к каким “историческим”
+(<i style='mso-bidi-font-style:normal'>содержащим данные не в реальном времени</i>)
+</span><span style='mso-ansi-language:RU'>узлам</span><span lang=ru> обработки
+запросов должны быть отправлены подзапросы, основываясь на отображении
+сегментов в </span><span style='mso-ansi-language:RU'>узлы</span><span lang=ru>,
+в которых сегменты загружаются. Брокеры хранят информацию об отображении в
+памяти. </span><span style='mso-ansi-language:RU'>Б</span><span lang=ru>рокер</span><span
+            style='mso-ansi-language:RU'>-узлы</span><span lang=ru> отправляют </span><span
+            style='mso-ansi-language:RU'>дальше </span><span lang=ru>подзапросы к </span><span
+            style='mso-ansi-language:RU'>узлам</span><span lang=ru> обработки запросов, и
+когда результаты этих подзапросов возвращаются, брокер объединяет их и возвращает
+финальный комбинированный результат пользователю.<br>
+<br>
+Я не берусь предполагать, зачем при проектировании Druid и Pinot было принято
+решение </span><span style='mso-ansi-language:RU'>о введении</span><span
+            lang=ru> еще одного типа </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru>. Однако, теперь они кажутся их неотъемлемой частью, поскольку</span><span
+            style='mso-ansi-language:RU'>,</span><span lang=ru> когда общее количество
+сегментов в кластере начинает превышать десять миллионов, информация об отображении
+сегментов в </span><span style='mso-ansi-language:RU'>узлы</span><span lang=ru>
+начинает занимать гигабайты памяти. Это очень расточительно – выделять столько
+много памяти на каждо</span><span style='mso-ansi-language:RU'>м узле</span><span
+            lang=ru> для обработки запросов. Вот </span><span style='mso-ansi-language:
+RU'>вам и </span><span lang=ru>еще один недостаток, который накладывается на
+Druid и Pinot их «сегментированной» архитектурой управления данными.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>В <b style='mso-bidi-font-weight:normal'>ClickHouse</b>
+выделять отдельный набор </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru> под “брокер запросов” обычно не требуется. Существует специальный,
+эфемерный <a
+                href="https://clickhouse.yandex/docs/en/table_engines/distributed.html"><span
+                style='color:#1155CC'>“распределенный” тип таблицы</span></a> в ClickHouse,
+который может быть установлен на любо</span><span style='mso-ansi-language:
+RU'>м узле</span><span lang=ru>, и запросы к этой таблице будут делать все то
+же, за что отвеча</span><span style='mso-ansi-language:RU'>ю</span><span
+            lang=ru>т брокер</span><span style='mso-ansi-language:RU'>-узлы</span><span
+            lang=ru> в Druid и Pinot. Обычно подобные эфемерные таблицы размещаются на
+каждо</span><span style='mso-ansi-language:RU'>м</span> <span style='mso-ansi-language:
+RU'>узле</span><span lang=ru>, котор</span><span style='mso-ansi-language:RU'>ый</span><span
+            lang=ru> участвует в секционированной таблице, так что на практике кажд</span><span
+            style='mso-ansi-language:RU'>ый</span> <span style='mso-ansi-language:RU'>узел</span><span
+            lang=ru> может быть “входной точкой” для запроса в кластер ClickHouse. Эт</span><span
+            style='mso-ansi-language:RU'>от узел</span><span lang=ru> может выпускать
+необходимые подзапросы к другим секциями, обрабатывать свою часть запроса
+самостоятельно и затем объединять её с частичными результатами от других </span><span
+            style='mso-ansi-language:RU'>секций</span><span lang=ru>.<br>
+<br>
+Когда </span><span style='mso-ansi-language:RU'>узел</span><span lang=ru> (или
+од</span><span style='mso-ansi-language:RU'>и</span><span lang=ru>н из
+процессинговых </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru> в ClickHouse, или брокер</span><span style='mso-ansi-language:RU'>-узел</span><span
+            lang=ru> в Druid и Pinot) выпускает подзапросы к другим, и один или несколько
+подзапросов по какой-либо причине заканчиваются неудачей, ClickHouse и Pinot
+обрабатывают эту ситуацию правильно: они объединяют результаты успешно
+выполненных подзапросов вместе, и всё равно возвращают частичный результат
+пользователю. <a
+                href="https://medium.com/@leventov/the-problems-with-druid-at-large-scale-and-high-load-part-1-714d475e84c9"><span
+                style='color:#1155CC'>Druid этой функции сейчас очень недостает</span></a>:
+если в нем выполнение подзапроса заканчивается неудачей, то неудачей зако</span><span
+            style='mso-ansi-language:RU'>н</span><span lang=ru>чится и весь запрос целиком.</span></p>
+
+    <h2><a name="_v30iiw8ay23b"></a><span lang=EN-US style='mso-ansi-language:EN-US'>ClickHouse
+vs. Druid </span><span lang=ru>или</span><span lang=EN-US style='mso-ansi-language:
+EN-US'> Pinot: </span><span lang=ru>Выводы</span><span lang=EN-US
+                                                       style='mso-ansi-language:EN-US'></span></h2>
+
+    <p class=MsoNormal><span lang=ru>“Сегментированный” подход к управлению данны</span><span
+            style='mso-ansi-language:RU'>ми</span><span lang=ru> в Druid и Pinot против
+более простого управления данными в ClickHouse определяет многие аспекты
+систем. Однако, важно заметить, что это различие </span><span style='mso-ansi-language:
+RU'>оказывает</span><span lang=ru> небольш</span><span style='mso-ansi-language:
+RU'>ое</span><span lang=ru> (или не </span><span style='mso-ansi-language:RU'>оказывает</span><span
+            lang=ru> вовсе) </span><span style='mso-ansi-language:RU'>влияние</span><span
+            lang=ru> на потенциальную эффективность сжатия (впрочем, история про компрессию
+для всех трех систем имеет печальный конец по нынешнему состоянию дел), или на
+скорость обработки запросов.<br>
+<br>
+<b style='mso-bidi-font-weight:normal'>ClickHouse</b> похож на традиционные
+RDMBS</span><span style='mso-ansi-language:RU'>,</span><span lang=ru> например,
+PostgreSQL. В частности, ClickHouse можно </span><span style='mso-ansi-language:
+RU'>развернуть</span><span lang=ru> на всего один сервер. Если планируемый
+размер невелик - скажем, не больше порядка 100 ядер CPU для обработки запросов
+и 1 TB данных, я бы сказал, что ClickHouse имеет значительные преимущества
+перед Druid и Pinot в силу своей простоты и отсутствия необходимости в
+дополнительных типах </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru>, таких как “мастер”, “</span><span style='mso-ansi-language:RU'>узлы </span><span
+            lang=ru>поглощения в реальном времени”, “брокеры”. На этом поле, ClickHouse
+соревнуется скорее с InfluxDB, чем с Druid или Pinot.<br>
+<br>
+</span><b style='mso-bidi-font-weight:normal'><span lang=EN-US
+                                                    style='mso-ansi-language:EN-US'>Druid and Pinot</span></b><span
+            lang=EN-US
+            style='mso-ansi-language:EN-US'> </span><span lang=ru>похож</span><span
+            lang=ru style='mso-ansi-language:EN-US'> </span><span lang=ru>на</span><span
+            lang=ru style='mso-ansi-language:EN-US'> </span><span lang=ru>системы</span><span
+            lang=EN-US style='mso-ansi-language:EN-US'> Big Data </span><span lang=ru>вроде</span><span
+            lang=EN-US style='mso-ansi-language:EN-US'> HBase. </span><span lang=ru>Здесь в
+виду имеются не характеристики производительности, а зависимость от ZooKeper,
+зависимость от персистентного реплицируемого хранилища (к примеру, HDFS),
+сосредоточение внимания на устойчивости к отказам отдельных узлов, а также
+автономная работа и управление данными, не требующими постоянного внимания
+человека.<br>
+<br>
+Для широкого спектра приложений, ни ClickHouse, ни Druid или Pinot не являются
+очевидными победителями. В первую очередь, вы должны принимать во внимание вашу
+способность разобраться с исходным кодом системы, исправлять баги, добавлять
+новы</span><span style='mso-ansi-language:RU'>е</span><span lang=ru> функци</span><span
+            style='mso-ansi-language:RU'>и</span><span lang=ru> и т.д. Это подробнее
+обсуждается в разделе “Про сравнени</span><span style='mso-ansi-language:RU'>е</span><span
+            lang=ru> производительности и выбор системы”.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Во-вторых, вам стоит взглянуть на таблицу
+ниже. Каждая ячейка в этой таблице описывает свойство приложения, которое
+позволит определить предпочтительную систему. Строки отсортированы <i
+                style='mso-bidi-font-style:normal'>не</i> в порядке важности. Важность
+различных свойств может разниться от приложения к приложению, но в целом можно
+применить следующий подход: если ваше приложение соответствует подавляющему
+большинству строк со свойствами в одной из колонок, то относящаяся к ней
+система в вашем случае является предпочтительным выбором.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <table class=a border=1 cellspacing=0 cellpadding=0 width=602 style='margin-left:
+ 5.0pt;border-collapse:collapse;mso-table-layout-alt:fixed;border:none;
+ mso-border-alt:solid black 1.0pt;mso-yfti-tbllook:1536;mso-padding-alt:5.0pt 5.0pt 5.0pt 5.0pt;
+ mso-border-insideh:1.0pt solid black;mso-border-insidev:1.0pt solid black'>
+        <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><b
+                        style='mso-bidi-font-weight:normal'><span lang=ru style='font-size:12.0pt;
+  color:#333333;background:white;mso-highlight:white'>ClickHouse</span><span
+                        lang=ru></span></b></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-left:none;mso-border-left-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><b
+                        style='mso-bidi-font-weight:normal'><span lang=ru style='font-size:12.0pt;
+  color:#333333;background:white;mso-highlight:white'>Druid или Pinot</span><span
+                        lang=ru></span></b></p>
+            </td>
+        </tr>
+        <tr style='mso-yfti-irow:1'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-top:none;mso-border-top-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>В организации есть эксперты по C++</span></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border-top:none;border-left:
+  none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
+  mso-border-top-alt:solid black 1.0pt;mso-border-left-alt:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>В организации есть эксперты по Java</span></p>
+            </td>
+        </tr>
+        <tr style='mso-yfti-irow:2'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-top:none;mso-border-top-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Малый кластер</span></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border-top:none;border-left:
+  none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
+  mso-border-top-alt:solid black 1.0pt;mso-border-left-alt:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Большой кластер</span></p>
+            </td>
+        </tr>
+        <tr style='mso-yfti-irow:3'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-top:none;mso-border-top-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Немного таблиц</span></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border-top:none;border-left:
+  none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
+  mso-border-top-alt:solid black 1.0pt;mso-border-left-alt:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Много таблиц</span></p>
+            </td>
+        </tr>
+        <tr style='mso-yfti-irow:4'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-top:none;mso-border-top-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Один набор данных</span></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border-top:none;border-left:
+  none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
+  mso-border-top-alt:solid black 1.0pt;mso-border-left-alt:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Несколько несвязанных наборов данных</span></p>
+            </td>
+        </tr>
+        <tr style='mso-yfti-irow:5'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-top:none;mso-border-top-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Таблицы и да</span><span style='mso-ansi-language:RU'>нные</span><span
+                        lang=ru> находятся в кластере перманентно</span></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border-top:none;border-left:
+  none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
+  mso-border-top-alt:solid black 1.0pt;mso-border-left-alt:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Таблицы и набор</span><span style='mso-ansi-language:RU'>ы</span><span
+                        lang=ru> данных периодически появляются в кластере и удаляются из него</span></p>
+            </td>
+        </tr>
+        <tr style='mso-yfti-irow:6'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-top:none;mso-border-top-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Размер таблиц (и интенсивность запросов к ним) остается стабильным во
+  времени</span></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border-top:none;border-left:
+  none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
+  mso-border-top-alt:solid black 1.0pt;mso-border-left-alt:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Таблицы значительно растут и сжимаются</span></p>
+            </td>
+        </tr>
+        <tr style='mso-yfti-irow:7'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-top:none;mso-border-top-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Однородные запросы (их тип, размер, распределение по времени суток и
+  т.д.)</span></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border-top:none;border-left:
+  none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
+  mso-border-top-alt:solid black 1.0pt;mso-border-left-alt:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Разнородные запросы</span></p>
+            </td>
+        </tr>
+        <tr style='mso-yfti-irow:8'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-top:none;mso-border-top-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>В данных есть измерение, по которому оно может быть сегментировано, и
+  почти не выполняется запросов, которые затрагивают данные, расположенные </span><span
+                        style='mso-ansi-language:RU'>в</span><span lang=ru> нескольких </span><span
+                        style='mso-ansi-language:RU'>сегментах</span></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border-top:none;border-left:
+  none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
+  mso-border-top-alt:solid black 1.0pt;mso-border-left-alt:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Подобного измерения нет, и запросы часто затрагивают данные, расположенные
+  во всем кластере</span></p>
+            </td>
+        </tr>
+        <tr style='mso-yfti-irow:9'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-top:none;mso-border-top-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Облако не используется, кластер должен быть развернут на
+  специфическую конфигурацию физических серверов</span></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border-top:none;border-left:
+  none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
+  mso-border-top-alt:solid black 1.0pt;mso-border-left-alt:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Кластер развернут в облаке</span></p>
+            </td>
+        </tr>
+        <tr style='mso-yfti-irow:10;mso-yfti-lastrow:yes'>
+            <td width=301 valign=top style='width:225.7pt;border:solid black 1.0pt;
+  border-top:none;mso-border-top-alt:solid black 1.0pt;padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Нет существующих кластеров Hadoop или Spark</span></p>
+            </td>
+            <td width=301 valign=top style='width:225.7pt;border-top:none;border-left:
+  none;border-bottom:solid black 1.0pt;border-right:solid black 1.0pt;
+  mso-border-top-alt:solid black 1.0pt;mso-border-left-alt:solid black 1.0pt;
+  padding:5.0pt 5.0pt 5.0pt 5.0pt'>
+                <p class=MsoNormal style='line-height:normal;mso-pagination:none'><span
+                        lang=ru>Кластеры Hadoop или Spark уже существуют и могут быть использованы</span></p>
+            </td>
+        </tr>
+    </table>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=ru>Примечание:</span></b><span
+            lang=ru> ни одно из свойств выше не означает, что вы должны использовать
+соответствующую систему (системы), или избегать другую. К примеру, если
+планируется, что ваш кластер будет большим, это не значит, что</span><span
+            style='mso-ansi-language:RU'> вы</span><span lang=ru> обязательно должны рассматривать
+только Druid или Pinot, исключив ClickHouse. Скорее всего, в данной ситуации
+Druid или Pinot могут быть лучшим выбором, но другие полезные свойства могут
+перевесить чашу весов в сторону ClickHouse, который для некоторых приложений
+является оптимальным выбором даже для больших кластеров.</span></p>
+
+    <h1><a name="_nigpl2dqtxor"></a><span lang=ru>Различия между Druid и Pinot</span></h1>
+
+    <p class=MsoNormal><span lang=ru>Как уже не раз отмечалось в данной статье,
+Druid и Pinot имеют весьма похожие архитектуры. Есть несколько достаточно
+заметных </span><span style='mso-ansi-language:RU'>особенностей</span><span
+            lang=ru>, которые есть в одной системе и отсутствуют в другой, и областей, в
+которых каждая из систем развита гораздо сильнее другой. Тем не менее, всё, о
+чем я собираюсь упомянуть ниже, можно воспроизвести в другой системе, приложив
+разумное количество усилий.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Между Druid и Pinot существует лишь <b
+            style='mso-bidi-font-weight:normal'>одно существенное различие</b>, которое
+слишком велико для того, чтобы от него избавились в обозримом будущем - это <b
+                style='mso-bidi-font-weight:normal'>реализация управления сегментами</b> в мастер</span><span
+            style='mso-ansi-language:RU'>-</span><span lang=ru>ноде. Кстати, разработчики
+обеих систем наверняка не хотели бы этого делать в любом случае, поскольку оба
+подхода имеют свои “за” и “против” - среди них нет такого, который был бы
+лучше.</span></p>
+
+    <h2><a name="_s5i3afz4xsvx"></a><span lang=ru>Управление сегментами в Druid</span></h2>
+
+    <p class=MsoNormal><span style='mso-ansi-language:RU'>М</span><span lang=ru>астер</span><span
+            style='mso-ansi-language:RU'>-нода</span><span lang=ru> в Druid (и ни од</span><span
+            style='mso-ansi-language:RU'>и</span><span lang=ru>н из </span><span
+            style='mso-ansi-language:RU'>узлов</span><span lang=ru> в Pinot) не отвечают за
+сохранность метаданных в сегментах данных в кластере, и текущее отображение
+между сегментами и </span><span style='mso-ansi-language:RU'>узлами</span><span
+            lang=ru> обработки данных, на которых загружены сегменты. Эта информация
+хранится в ZooKeeper. Однако, Druid <i style='mso-bidi-font-style:normal'>в
+дополнение</i> хранит эту информацию еще и в SQL базе данных, которая </span><span
+            style='mso-ansi-language:RU'>необходима</span><span lang=ru> для развертывания
+кластера Druid. Не могу сказать, с какой целью было принято </span><span
+            style='mso-ansi-language:RU'>такое</span><span lang=ru> решение, но сейчас оно
+дает следующие преимущества:<br style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l0 level1 lfo5'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>В ZooKeeper <b style='mso-bidi-font-weight:
+normal'>хранится меньше данных</b>. Только минимум информации об отображении
+идентификатора сегмента на список </span><span style='mso-ansi-language:RU'>узлов,</span><span
+            lang=ru> занимающихся обработкой запросов, куда загружен сегмент, сохраняется в
+ZooKeeper. Оставшиеся метаданные</span><span style='mso-ansi-language:RU'>, </span><span
+            lang=ru>к примеру, размер сегмента, список измерений и метрики, и т.д. - хранятся
+только в SQL базе данных.<br style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l0 level1 lfo5'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Когда сегменты данных вытесняются
+из кластера, поскольку они становятся слишком старыми (это общая функция всех
+баз данных временных рядов - она есть и в ClickHouse, и в Druid, и в Pinot),
+они выгружаются из </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru> обработки запросов и их метаданные удаляются из ZooKeeper, но не из
+“глубокого хранилища” и не из базы данных SQL. Пока они не будут удалены из
+этих мест вручную, <b style='mso-bidi-font-weight:normal'>остается возможность
+“оживить” действительно старые данные быстро</b>, </span><span
+            style='mso-ansi-language:RU'>если он</span> <span style='mso-ansi-language:
+RU'>по</span><span lang=ru>требуются для построения отчетов или </span><span
+            style='mso-ansi-language:RU'>и</span><span lang=ru>сследований.<br
+            style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l0 level1 lfo5'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Вряд ли это планировалось с самого
+начала, но теперь есть планы сделать <b style='mso-bidi-font-weight:normal'>зависимость
+Druid от ZooKeeper опциональной</b>. Сейчас ZooKeeper используется для трех
+различных </span><span style='mso-ansi-language:RU'>функций</span><span
+            lang=ru>: управления сегментами, обнаружени</span><span style='mso-ansi-language:
+RU'>я</span><span lang=ru> сервисов и хранения свойств (например, для
+управления поглощением данных в реальном времени). Обнаружение сервисов может <a
+                href="https://groups.google.com/d/msg/druid-development/eIWDPfhpM_U/Em06lGjhAwAJ"><span
+                style='color:#1155CC'>быть предоставлено Consul</span></a>. Управление
+сегментами может быть реализовано <a
+                href="https://groups.google.com/d/msg/druid-development/tWnwPyL0Vk4/2uLwqgQiAAAJ"><span
+                style='color:#1155CC'>при помощи HTTP-команд</span></a>, и оно доступно нам
+благодаря тому, что функци</span><span style='mso-ansi-language:RU'>и</span><span
+            lang=ru> хранения в ZooKeeper “бекапится” в базе SQL.<br style='mso-special-character:
+line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormal><span style='mso-ansi-language:RU'>Т</span><span lang=ru>о
+что нам приходится иметь в зависимостях базу данных SQL, </span><span
+            style='mso-ansi-language:RU'>приводит к</span><span lang=ru> большей нагрузке
+на эксплуатацию</span><span style='mso-ansi-language:RU'>,</span><span lang=ru>
+особенно</span><span style='mso-ansi-language:RU'>,</span><span lang=ru> если в
+компании еще не использовалась какая-либо БД SQL. Druid поддерживает MySQL и
+PostgreSQL, есть </span><span style='mso-ansi-language:RU'>и </span><span
+            lang=ru>расширение для Microsoft SQL Server. Кроме того, когда Druid р</span><span
+            style='mso-ansi-language:RU'>разворачивается</span><span lang=ru> в облаке,
+можно использовать стандартные сервисы для управления RDBMS - к примеру, Amazon
+RDS.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <h2><a name="_5ui2bug078a5"></a><span lang=ru>Управление сегментами в Pinot</span></h2>
+
+    <p class=MsoNormal><span lang=ru>В отличие от Druid, который реализует всю
+логику управления сегментами самостоятельно и полагается только на <a
+                href="https://curator.apache.org/"><span style='color:#1155CC'>Curator</span></a>
+для </span><span style='mso-ansi-language:RU'>взаимодействия</span><span
+            lang=ru> с ZooKeeper, Pinot делегирует большую часть логики управления
+сегментами и кластерами на <a href="https://helix.apache.org/"><span
+                style='color:#1155CC'>фреймворк Helix</span></a>. </span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>С одной стороны, я могу понять, что это дает
+разработчикам Pinot возможность сосредоточиться на других частях их системы. В
+Helix возможно меньше багов, чем в логике внутри самого Druid, поскольку он
+тестируется в других условиях и поскольку в него, предположительно, было
+вложено гораздо больше рабочего времени.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>С другой стороны, Helix возможно ограничивает
+Pinot своими “рамками фреймворка”. Helix, и следовательно</span><span
+            style='mso-ansi-language:RU'>,</span> <b style='mso-bidi-font-weight:normal'><span
+            lang=ru>Pinot, скорее всего будут зависеть от ZooKeeper всегда</span></b><span
+            lang=ru>.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Далее я собираюсь перечислить менее важные
+различия между Druid и Pinot - в том смысле, что если у вас возникнет серьезное
+желание повторить одну из этих </span><span style='mso-ansi-language:RU'>функций</span><span
+            lang=ru> в вашей системе, то это будет вполне осуществимо.</span></p>
+
+    <h2><a name="_ebly3dv99rxj"></a><span lang=ru>«Проталкивание предикатов» в
+Pinot</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Если во время поглощения данные секционируются
+в Kafka по каким-либо ключам измерений, Pinot </span><span style='mso-ansi-language:
+RU'>создает</span><span lang=ru> сегменты, которые содержат информацию об этом </span><span
+            style='mso-ansi-language:RU'>разбиении</span><span lang=ru> и затем</span><span
+            style='mso-ansi-language:RU'>,</span><span lang=ru> когда выполняется запрос с
+предикатом на данном измерении, брокер</span><span style='mso-ansi-language:
+RU'>-узел</span><span lang=ru> фильтрует сегменты таким образом, чтобы как
+можно меньше сегментов и </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru> обработки запросов</span><span style='mso-ansi-language:RU'> было затронуто</span><span
+            lang=ru>.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Эта концепция </span><span style='mso-ansi-language:
+RU'>в оригинале </span><span lang=ru>называется “</span><b style='mso-bidi-font-weight:
+normal'><span lang=EN-US style='mso-ansi-language:EN-US'>p</span><span lang=ru>redicate
+pushdown</span></b><span lang=ru>”</span><span style='mso-ansi-language:RU'> и </span><span
+            lang=ru>важна для поддержания высокой производительности в некоторых
+приложениях.<br>
+<br>
+На данный момент Druid поддерживает </span><span style='mso-ansi-language:RU'>разбиение</span><span
+            lang=ru> по ключам, если сегменты были созданы в Hadoop, но еще не поддерживает
+сегменты, созданные во время поглощения в реальном времени. Druid сейчас не
+реализует функцию «проталкивания предикатов» на брокеры.</span></p>
+
+    <h2><a name="_jtoub1i8moc"></a><span lang=ru>“Сменный” Druid и своевольный
+Pinot</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Поскольку Druid использу</span><span
+            style='mso-ansi-language:RU'>ю</span><span lang=ru>т различны</span><span
+            style='mso-ansi-language:RU'>е</span><span lang=ru> организаци</span><span
+            style='mso-ansi-language:RU'>и</span><span lang=ru> и в его разработке
+принимают участие несколько компаний, он обзавелся поддержкой нескольких
+взаимозаменяемых опций для практически любой выделенной части или “сервиса”:</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l4 level1 lfo3'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>HDFS, Cassandra, Amazon S3, Google
+Cloud Storage или Azure Blob Storage и т.д. в качестве “глубокого хранилища”;</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l4 level1 lfo3'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Kafka, илиr RabbitMQ, Samza, или
+Flink, или Spark, Storm, и т.д. (через <a
+                href="https://github.com/druid-io/tranquility"><span style='color:#1155CC'>Tranquility</span></a>)
+в качестве источника поглощения данных в реальном времени;</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l4 level1 lfo3'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><span lang=ru>Сам Druid, или Graphite, или
+Ambari, или StatsD, или Kafka в качестве “слива” для телеметрии кластера Druid
+(метрик).</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span style='mso-ansi-language:RU'>В то же время</span><span
+            lang=ru> Pinot почти целиком разрабатывался исключительно в стенах LinkedIn и
+должен был удовлетворять текущи</span><span style='mso-ansi-language:RU'>м</span><span
+            lang=ru> нужд</span><span style='mso-ansi-language:RU'>ам</span><span lang=ru>
+компании, </span><span style='mso-ansi-language:RU'>поэтому </span><span
+            lang=ru>выбор, который вам предлагается, не так велик</span><span
+            style='mso-ansi-language:RU'>.</span> <span style='mso-ansi-language:RU'>В</span><span
+            lang=ru> качестве “глубокого хранилища” необходимо использовать HDFS или Amazon
+S3, а для поглощения данных в реальном времени подойдет только Kafka. Но если
+кому-то это действительно понадобится, мне кажется, не составит особой сложности
+добавить поддержку любого другого сервиса в Pinot. К тому же, можно ожидать
+позитивных сдвигов в этом направлении, поскольку <a
+                href="https://www.slideshare.net/XIANGFU3/pinot-near-realtime-analytics-uber"><span
+                style='color:#1155CC'>Uber</span></a> и Slack начинают использовать Pinot.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <h2><span lang=ru>Формат данных и движок выполнения запросов лучше
+оптимизированы в Pinot</span></h2>
+
+    <p class=MsoNormal><span lang=ru>В частности, следующие функции <a
+            href="https://github.com/linkedin/pinot/wiki/Architecture#anatomy-of-index-segment"><span
+            style='color:#1155CC'>формата сегментов Pinot</span></a> сейчас отсутствуют в
+Druid:<br style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l3 level1 lfo7'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'><span
+            lang=ru>Сжатие проиндексированных столбцов</span></b><span lang=ru> с битовой
+гранулярностью, </span><span style='mso-ansi-language:RU'>но </span><span
+            lang=ru>байтовой гранулярностью в Druid.</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l3 level1 lfo7'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'><span
+            lang=ru>Инвертированный индекс опционален</span></b><span lang=ru> для каждого
+столбца</span><span style='mso-ansi-language:RU'>.</span> <span
+            style='mso-ansi-language:RU'>В</span> <span lang=ru>Druid он является
+обязательным, иногда этого не требуется</span><span style='mso-ansi-language:
+RU'>, но все равно</span> <span lang=ru>занимает много места. Различие в
+потреблении места между Druid и Pinot, <a
+                href="https://www.slideshare.net/XIANGFU3/pinot-near-realtime-analytics-uber/17"><span
+                style='color:#1155CC'>на котор</span><span lang=RU style='color:#1155CC;
+mso-ansi-language:RU'>ое</span><span style='color:#1155CC'> указывает Uber в
+своих тестах</span></a>, вполне возможно вызван</span><span style='mso-ansi-language:
+RU'>о</span> <span style='mso-ansi-language:RU'>именно этим</span><span
+            lang=ru>.</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l3 level1 lfo7'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'><span
+            lang=ru>Минимальные и максимальные значения</span></b><span lang=ru> в числовых
+столбцах записываются посегментно.</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l3 level1 lfo7'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'><span
+            lang=ru>Поддержка сортировки данных из коробки</span></b><span lang=ru>. В
+Druid это</span><span style='mso-ansi-language:RU'>го</span><span lang=ru>
+можно достичь только вручную и слегка специфическим способом (как было описано
+в разделе “CloudFlare: ClickHouse </span><span style='mso-ansi-language:RU'>против</span><span
+            lang=ru> Druid”). Сортировка данных означает лучшее сжатие, и эта функция в
+Pinot - еще одна причина различия между Druid и Pinot в потреблении
+пространства (и производительности запросов!), на которую указывает Uber.</span></p>
+
+    <p class=MsoNormalCxSpMiddle style='margin-left:36.0pt;mso-add-space:auto;
+text-indent:-18.0pt;mso-list:l3 level1 lfo7'><![if !supportLists]><span
+            lang=ru><span style='mso-list:Ignore'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'><span
+            lang=ru>Формат данных</span></b><span lang=ru>, используемый для многозначных
+столбцов, на данный момент лучше оптимизирован в Pinot, чем в Druid.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Однако, все это можно реализовать </span><span
+            style='mso-ansi-language:RU'>и </span><span lang=ru>в Druid. И несмотря на то,
+что формат Pinot оптимизирован существенно лучше, чем формат Druid, он все
+равно достаточно далек от того, чтобы быть оптимальным. Один из примеров: Pinot
+(как и Druid) использует только сжатие общего назначение (</span><span
+            style='mso-ansi-language:RU'>как </span><span lang=ru>Zstd) и еще не
+реализовали идеи сжатия из <a
+                href="http://www.vldb.org/pvldb/vol8/p1816-teller.pdf"><span
+                style='color:#1155CC'>Gorilla</span></a>.<br>
+<br>
+</span><span style='mso-ansi-language:RU'>К</span><span lang=ru> сожалению Uber
+по большей части использовал запросы </span><span lang=ru style='font-family:
+"Courier New";letter-spacing:-.05pt'>count (*)</span><i style='mso-bidi-font-style:
+normal'><span lang=ru> </span></i><span lang=ru>для сравнения
+производительности Druid и Pinot </span><span style='mso-ansi-language:RU'>о</span><span
+            lang=ru>тносительно выполнения запроса </span><span style='mso-ansi-language:
+RU'>[</span><span lang=ru><a
+            href="https://www.slideshare.net/XIANGFU3/pinot-near-realtime-analytics-uber/18"><span
+            style='color:#1155CC'>1</span></a>, <a
+            href="https://www.slideshare.net/XIANGFU3/pinot-near-realtime-analytics-uber/19"><span
+            style='color:#1155CC'>2</span></a></span><span style='mso-ansi-language:RU'>]</span><span
+            lang=ru>, котор</span><span style='mso-ansi-language:RU'>ый</span><span
+            lang=ru> сейчас в Druid представляет собой тупое линейное сканирование, хотя
+его и несложно заменить <a
+                href="https://github.com/druid-io/druid/issues/4065#issuecomment-286963235"><span
+                style='color:#1155CC'>корректной O(1) реализацией</span></a>. </span><span
+            style='mso-ansi-language:RU'>Э</span><span lang=ru>то вам еще один пример
+бессмысленных сравнений в стиле “черного ящика”, о которых мы говорили ранее.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>По моему мнению, причины сильного различия в
+производительности запросов </span><span lang=ru style='font-family:"Courier New";
+letter-spacing:-.05pt'>GROUP BY</span><span lang=ru>, которое наблюдали в Uber,
+стоит искать в недостатке сортировки данных в сегментах Druid, как </span><span
+            style='mso-ansi-language:RU'>уже </span><span lang=ru>было отмечено выше в этом
+разделе.</span></p>
+
+    <h2><a name="_nvbikxescjmr"></a><span lang=ru>У Druid есть более умный алгоритм
+присваивания (балансировки) сегментов</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Алгоритм Pinot заключается в присвоении
+сегмента к </span><span style='mso-ansi-language:RU'>узлам</span><span lang=ru>
+обработки запроса, которые имеют наименьшее число сегментов</span><span
+            style='mso-ansi-language:RU'>,</span><span lang=ru> загруженных в текущий
+момент. Алгоритм Druid является гораздо более сложным; он учитывает таблицу
+каждого сегмента и время, и применяет <b style='mso-bidi-font-weight:normal'>сложн</b></span><b
+            style='mso-bidi-font-weight:normal'><span style='mso-ansi-language:RU'>ую</span><span
+            lang=ru> формул</span></b><b style='mso-bidi-font-weight:normal'><span
+            style='mso-ansi-language:RU'>у</span><span lang=ru> для вычисления финального </span></b><b
+            style='mso-bidi-font-weight:normal'><span style='mso-ansi-language:RU'>коэффициента</span></b><span
+            lang=ru>, согласно которому будут ранжированы </span><span style='mso-ansi-language:
+RU'>узлы</span><span lang=ru> обработки запросов для выбора наилучше</span><span
+            style='mso-ansi-language:RU'>го</span><span lang=ru>, которо</span><span
+            style='mso-ansi-language:RU'>му и</span><span lang=ru> будет присвоен новый
+сегмент. Этот алгоритм показал ускорение в скорости выполнения запросов в
+продакшне Metamarkets</span><span style='mso-ansi-language:RU'> на </span><b
+            style='mso-bidi-font-weight:normal'><span lang=ru>30-40%</span></b><span
+            lang=ru>. Хотя, даже несмотря на подобный результат, мы им по-прежнему не
+слишком довольны - подробности можно прочитать <a
+                href="https://metamarkets.com/2016/distributing-data-in-druid-at-petabyte-scale/"><span
+                style='color:#1155CC'>в отдельной статье</span></a>.<br style='mso-special-character:
+line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormal><span lang=ru>Не знаю, как в LinkedIn управляются со всем
+при помощи настолько простого алгоритма балансировки сегментов в Pinot, но,
+вполне возможно, их ожидают значительные улучшения по части производительности,
+если они решатся потратить время на совершенствование используемого ими
+алгоритма.</span></p>
+
+    <h2><a name="_bywxevdi2idw"></a><span lang=ru>Pinot более устойчив к отказам
+при выполнении сложных запросов</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Как уже упоминалось выше в разделе “Выполнение
+запрос</span><span style='mso-ansi-language:RU'>а</span><span lang=ru>”, когда
+брокер</span><span style='mso-ansi-language:RU'>-узел</span><span lang=ru>
+создает подзапросы к другим </span><span style='mso-ansi-language:RU'>узлам</span><span
+            lang=ru>, некоторые подзапросы заканчиваются ошибкой, но Pinot объединяет
+результаты всех удачно выполненных подзапросов и по-прежнему возвращает
+частичный результат пользователю.<br>
+<br>
+В Druid такой функции на данный момент.</span></p>
+
+    <h2><a name="_1kl90do22at9"></a><span lang=ru>Иерархия </span><span
+            style='mso-ansi-language:RU'>узлов</span><span lang=ru> обработки запросов в
+Druid</span></h2>
+
+    <p class=MsoNormal><span lang=ru>Смотрите аналогичный раздел выше. Druid
+позволяет </span><span style='mso-ansi-language:RU'>вводить</span><span
+            lang=ru> уровни </span><span style='mso-ansi-language:RU'>узлов</span><span
+            lang=ru> обработки запросов для старых и новых данных, и для </span><span
+            style='mso-ansi-language:RU'>узлов</span><span lang=ru> со “старыми” данными
+соотношение “ресурсы CPU, RAM / число загруженных сегментов” гораздо ниже, что
+позволяет выиграть на расходах на инфраструктуру в обмен на низкую
+производительность запросов при доступе к старым данным.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>Насколько мне известно, в Pinot на данный
+момент аналогичн</span><span style='mso-ansi-language:RU'>ая</span><span
+            lang=ru> функционал</span><span style='mso-ansi-language:RU'>ьность</span><span
+            lang=ru> отсутствует.</span></p>
+
+    <h1><a name="_1h1dyery0kua"></a><span lang=ru>Заключение</span></h1>
+
+    <p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=ru>ClickHouse,
+Druid и Pinot имеют фундаментально схожую архитектуру</span></b><span lang=ru>,
+и занимают свою собственную нишу между Big Data-фреймворками общего назначения
+вроде Impala, Presto, Spark, и колоночными базами данных с корректной
+поддержкой первичных ключей, точечных обновлений и удалений</span><span
+            style='mso-ansi-language:RU'>, как</span><span lang=ru> InfluxDB.<br
+            style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormal><span lang=ru>В силу схожести архитектур, ClickHouse, Druid
+и Pinot имеют примерно одинаковый “</span><span style='mso-ansi-language:RU'>предел</span><span
+            lang=ru> оптимизации”. Но в своем текущем состоянии, <b style='mso-bidi-font-weight:
+normal'>все три системы еще незрелы</b> и очень далеки от этого лимита.
+Существенных улучшений в производительности данных систем (примени</span><span
+            style='mso-ansi-language:RU'>тельно к</span><span lang=ru> специфически</span><span
+            style='mso-ansi-language:RU'>м</span><span lang=ru> сценари</span><span
+            style='mso-ansi-language:RU'>ям</span><span lang=ru> использования) можно
+достичь несколькими человеко-месяцами работы опытных инженеров. </span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal style='margin-left:1.0cm'><span lang=ru style='background:
+yellow;mso-highlight:yellow'>Я бы не рекомендовал вам сравнивать
+производительность данных систем между собой - выберите для себя ту, чей
+исходный код вы способны понять и модифицировать, или ту, в которую вы хотите
+инвестировать свои ресурсы.</span><span lang=ru><br style='mso-special-character:
+line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></span></p>
+
+    <p class=MsoNormal><span lang=ru>Из этих трех систем, ClickHouse стоит немного
+в стороне от Druid и Pinot - в то время как Druid и Pinot практически
+идентичны, и их можно считать двумя независимо разрабатываемыми реализациями
+одной и той же системы.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal><span lang=ru>ClickHouse больше напоминает “традиционные”
+базы данных вроде PostgreSQL. ClickHouse можно установить на од</span><span
+            style='mso-ansi-language:RU'>ин узел</span><span lang=ru>. При малых масштабах
+(менее 1 TB памяти, менее 100 ядер CPU), ClickHouse выглядит гораздо более
+интересным вариантом, чем Druid или Pinot - если вам все еще хочется их
+сравнивать - в силу того, что ClickHouse проще и имеет меньше движущихся частей
+и сервисов. Я бы даже сказал, что на таком масштабе он скорее становится
+конкурентом для InfluxDB или Prometheus, а не </span><span style='mso-ansi-language:
+RU'>для</span><span lang=ru> Druid или Pinot.<br>
+<br>
+Druid и Pinot больше напоминают другие системы Big Data из экосистемы Hadoop.
+Они сохраняют свои “самоуправляемые” свойства даже на очень больших масштабах
+(более 500 </span><span style='mso-ansi-language:RU'>узлов)</span><span
+            lang=ru>, в то время как ClickHouse потребует</span><span style='mso-ansi-language:
+RU'> для этого</span><span lang=ru> достаточно много работы профессиональных
+SRE. Кроме того, Druid и Pinot занимают выигрышную позицию в плане оптимизации
+инфраструктурной стоимости больших кластеров, и лучше подходят для облачных
+окружений, чем ClickHouse.<br>
+<br>
+Единственным долгосрочным различием между Druid и Pinot является то, что Pinot
+зависит от фреймворка Helix и будет продолжать зависеть от ZooKeeper, в то
+время как Druid может уйти от зависимости от ZooKeeper. С другой стороны, </span><span
+            style='mso-ansi-language:RU'>установка </span><span lang=ru>Druid продолжит
+зависеть от наличия какой-либо SQL-базы данных.</span><span lang=ru
+                                                            style='mso-ansi-language:RU'> </span><span lang=ru>На данный момент, Pinot
+оптимизирован лучше, чем Druid.</span></p>
+
+    <p class=MsoNormal><span lang=ru>&nbsp;</span></p>
+
+    <p class=MsoNormal style='margin-left:1.0cm'><span style='background:yellow;
+mso-highlight:yellow;mso-ansi-language:RU'>Если вы уже сталкивались с
+необходимостью сравнения этих систем и сделали свой выбор, то приходите на одну
+из наших конференций и расскажите о своем кейсе: о том какие именно были задачи
+и какие грабли (а наверняка они были) вы встретили. Хотя, конечно, базы данных
+далеко не единственная тема. Ближайший по окончанию срока подачи заявок (<b
+                style='mso-bidi-font-weight:normal'>до 9 апреля</b>) фестиваль </span><span
+            lang=ru><a href="http://ritfest.ru/"><span lang=RU style='background:yellow;
+mso-highlight:yellow;mso-ansi-language:RU'>РИТ++</span></a></span><span
+            style='background:yellow;mso-highlight:yellow;mso-ansi-language:RU'> включает направления:
+</span><span lang=ru><a href="http://frontendconf.ru/"><span lang=RU
+                                                             style='background:yellow;mso-highlight:yellow;mso-ansi-language:RU'>фронтенд</span></a></span><span
+            style='background:yellow;mso-highlight:yellow;mso-ansi-language:RU'>, </span><span
+            lang=ru><a href="http://backendconf.ru/"><span lang=RU style='background:yellow;
+mso-highlight:yellow;mso-ansi-language:RU'>бэкенд</span></a></span><span
+            style='background:yellow;mso-highlight:yellow;mso-ansi-language:RU'>, </span><span
+            lang=ru><a href="http://rootconf.ru/"><span lang=RU style='background:yellow;
+mso-highlight:yellow;mso-ansi-language:RU'>эксплуатацию</span></a></span><span
+            style='background:yellow;mso-highlight:yellow;mso-ansi-language:RU'> и </span><span
+            lang=ru><a href="http://whalerider.ru/"><span lang=RU style='background:yellow;
+mso-highlight:yellow;mso-ansi-language:RU'>управление</span></a></span><span
+            style='background:yellow;mso-highlight:yellow;mso-ansi-language:RU'>. Участникам
+обычно интереснее всего узнать о</span><span style='mso-fareast-font-family:
+"Times New Roman";background:yellow;mso-highlight:yellow;mso-ansi-language:
+RU'> конкретных примерах, но и выступления и в виде обзоров и исследований тоже
+возможны – главное, чтобы тема была интересна лично вам.</span><span
+            style='mso-fareast-font-family:"Times New Roman";mso-ansi-language:RU'></span></p>
+
+    <p class=MsoNormal style='margin-left:1.0cm'><span style='mso-ansi-language:
+RU'>&nbsp;</span></p>
+
+</div>
+
+</body>
+
+</html>
